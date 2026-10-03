@@ -1,0 +1,62 @@
+#!/bin/bash
+
+set -e
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+mkdir -p build/hashx
+mkdir -p build/equix
+
+echo "=== Building HashX ==="
+
+cd build/hashx
+
+emcmake cmake ../../native/equix/hashx \
+    -DCMAKE_BUILD_TYPE=Release
+
+emmake make hashx_static
+
+echo "HashX built:"
+ls -lh libhashx.a
+
+
+echo "=== Building Equi-X ==="
+
+cd ../equix
+
+emcmake cmake ../../native/equix \
+    -DCMAKE_BUILD_TYPE=Release
+
+emmake make
+
+echo "Equi-X built:"
+ls -lh libequix.a
+
+
+echo "=== Linking WASM ==="
+
+emcc \
+    libequix.a \
+    ../hashx/libhashx.a \
+    -O0 \
+    -s MODULARIZE=1 \
+    -s EXPORT_ES6=1 \
+    -s EXPORT_NAME=EquixModule \
+    -s ENVIRONMENT=node \
+    -s ALLOW_MEMORY_GROWTH=1 \
+    -s EXPORTED_FUNCTIONS='[
+        "_equix_init",
+        "_equix_init_verify",
+        "_equix_solve_wrapper",
+        "_equix_verify_wrapper",
+        "_equix_shutdown",
+        "_malloc",
+        "_free"
+    ]' \
+    -s EXPORTED_RUNTIME_METHODS='[
+        "HEAPU8",
+        "HEAPU16"
+    ]' \
+    -o ../../src/wasm/equix.js
+
+echo "=== Done ==="

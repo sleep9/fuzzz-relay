@@ -1,0 +1,13 @@
+version: "3"
+services:
+  app:
+    volumes:
+      - ./data:/opt/app/fuzzz-relay/data
+    build: .
+    networks:
+      - fuzzz
+    env_file:
+      - .env
+networks:
+  fuzzz:
+    external: true
