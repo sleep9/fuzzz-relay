@@ -649,6 +649,8 @@ function claimsRelayFromPeer(peer: any): boolean {
 
         let page = null;
 
+        
+
         try {
 
             page = await validateIncomingPut(msg);
@@ -667,7 +669,13 @@ function claimsRelayFromPeer(peer: any): boolean {
 
         
         this.to.next(msg);
-     
+        
+        const soul = msg.put["#"];
+
+        if (USER_ROOT_REGEX.test(soul)) {   
+            await refreshUserIndex(soul)
+        }
+        
         if(page) await refreshPostIndex(page);
 
     });
@@ -695,6 +703,16 @@ setTimeout(() => {
     });
 }, 1000);
 */
+
+async function refreshUserIndex(user:string) {
+    return new Promise<any>((resolve) => {
+        gun
+            .get(`${user}`)
+            .once((data:any) => {
+                resolve(data);
+            });
+    });
+}
 
 async function refreshPostIndex(page: string) {
     return new Promise<any>((resolve) => {
@@ -1051,7 +1069,11 @@ async function validateIncomingPut(msg: any) {
     const field = put["."];
     const rawValue = put[":"];
 
+    
+
     const value = decodeGunValue(rawValue)
+
+
 
     if (
         USER_ROOT_REGEX.test(soul) &&
@@ -1066,6 +1088,7 @@ async function validateIncomingPut(msg: any) {
         }
 
         return null;
+
     }
 
     if (isGunUserSoul(soul)) {

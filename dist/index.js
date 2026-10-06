@@ -346,6 +346,10 @@ Gun.on("opt", function (root) {
             return;
         }
         this.to.next(msg);
+        const soul = msg.put["#"];
+        if (USER_ROOT_REGEX.test(soul)) {
+            await refreshUserIndex(soul);
+        }
         if (page)
             await refreshPostIndex(page);
     });
@@ -366,6 +370,15 @@ setTimeout(() => {
     });
 }, 1000);
 */
+async function refreshUserIndex(user) {
+    return new Promise((resolve) => {
+        gun
+            .get(`${user}`)
+            .once((data) => {
+            resolve(data);
+        });
+    });
+}
 async function refreshPostIndex(page) {
     return new Promise((resolve) => {
         gun
